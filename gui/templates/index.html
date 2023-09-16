@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RFID WEIGH BRIDGE</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h3 {
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #333;
+            color: #fff;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+    </style>
+    <script>
+        // Function to fetch logged data from the backend API
+        function loadLoggedData() {
+            // AJAX request to fetch logged data
+            $.get('/api/logged-data', function(response) {
+                var loggedData = response;
+                console.log(response);
+                // Generate HTML table rows for the logged data
+                var loggedDataHtml = '';
+                for (var i = 0; i < loggedData.length; i++) {
+                    loggedDataHtml += '<tr>';
+                    loggedDataHtml += '<td>' + loggedData[i].id + '</td>';
+                    loggedDataHtml += '<td>' + loggedData[i].api1_data + '</td>';
+                    loggedDataHtml += '<td>' + loggedData[i].api2_data + '</td>';
+                    loggedDataHtml += '</tr>';
+                }
+
+                // Append the logged data HTML to the table body
+                $('#logged-data-table tbody').html(loggedDataHtml);
+            });
+        }
+
+        $(document).ready(function() {
+            // Function to fetch live data from API every 100ms
+            function fetchLiveData() {
+                // AJAX request to fetch data
+                $.get('/api/live-data', function(response) {
+                    // Display live data on the page
+                    console.log(response);
+                    $('#api1-data').text(response.api1_data.rfid_data);
+                    $('#api2-data').text(response.api2_data.weighbridge_data);
+                });
+            }
+
+            // Function to save data on button click
+            function saveData() {
+                // Get the current live data from the page
+                var api1Data = $('#api1-data').text();
+                var api2Data = $('#api2-data').text();
+
+                // AJAX request to save data
+                $.ajax({
+                    type: 'POST',
+                    url: '/api/save-data',
+                    data: JSON.stringify({api1_data: api1Data, api2_data: api2Data}),
+                    contentType: 'application/json',
+                    success: function(response) {
+                        console.log(response.message);
+                    }
+                });
+                loadLoggedData();
+            }
+
+            // Fetch live data every 100ms
+            setInterval(fetchLiveData, 2000);
+
+            // Button click event to save data
+            $('#save-button').click(saveData);
+
+            // Load logged data on page load
+            loadLoggedData();
+        });
+    </script>
+</head>
+<body>
+    <header>
+        <h1>RFID WEIGH BRIDGE</h1>
+    </header>
+
+    <div class="container">
+        <h3>Current Live Data:</h3>
+        <p>RFID Data: <span id="api1-data"></span></p>
+        <p>WEIGH BRIDGE Data: <span id="api2-data"></span></p>
+
+        <button id="save-button">LOG Data</button>
+
+        <h3>Logged Data:</h3>
+        <table id="logged-data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>RFID Data</th>
+                    <th>WEIGH BRIDGE Data</th>
+                </tr>
+            </thead>
+            <tbody id="logged-data">
+                <!-- Logged data will be dynamically loaded here -->
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
